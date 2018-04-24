@@ -1,50 +1,36 @@
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>
-PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
-PREFIX sntag: <http://www.ldbc.eu/ldbc_socialnet/1.0/tag/>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-PREFIX dbpedia: <http://dbpedia.org/resource/>
-PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
+prefix sntag: <http://www.ldbc.eu/ldbc_socialnet/1.0/tag/>
+prefix sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>
+prefix foaf: <http://xmlns.com/foaf/0.1/>
+prefix dbpedia: <http://dbpedia.org/resource/>
+prefix dbpedia-owl: <http://dbpedia.org/ontology/>
 
-select
-    (?fof AS ?personId)
-    (?first AS ?personFirstName)
-    (?last AS ?personLastName)
-    (?gender AS ?personGender)
-    (?locationname AS ?personCityName)
-    (
-     (( select count(distinct ?post)
-        where {
-	    ?post a snvoc:Post .
-            ?post snvoc:hasCreator ?fof .
-            ?post snvoc:hasTag ?tag .
-            sn:pers$Person snvoc:hasInterest ?tag
-        }
-     ))
-     -
-     (( select count(distinct ?post)
-        where {
-	    ?post a snvoc:Post .
-            ?post snvoc:hasCreator ?fof .
-            filter (!exists {sn:pers$Person snvoc:hasInterest ?tag. ?post snvoc:hasTag ?tag .})
-        }
-     )) AS ?commonInterestScore
-    )
-where {
-   {select distinct ?fof
-    where {
-        sn:pers$Person snvoc:knows ?fr .
-        ?fr snvoc:knows ?fof .
-	filter (?fof != sn:pers$Person)
-        minus { sn:pers$Person snvoc:knows ?fof } .
-    }
-   } .
-   ?fof snvoc:firstName ?first .   ?fof snvoc:lastName ?last .
-   ?fof snvoc:gender ?gender .     ?fof snvoc:birthday ?bday .
-   ?fof snvoc:isLocatedIn ?based . ?based foaf:name ?locationname .
-   filter (1 = if (month (?bday) = $HS0, if (day(?bday) >= 21, 1, 0), if (month (?bday) = $HS1, if (day(?bday) < 22, 1, 0), 0)))
+SELECT  ?personId
+        ?personFirstName
+        ?personLastName
+        ?personGender
+        ?personCityName
+        (COUNT(*) AS ?commonInterestScore)
+WHERE {
+?gPer           snvoc:id                        ?id;
+                snvoc:knows/snvoc:hasPerson     ?fPer;
+                snvoc:hasInterest               ?tag .
+?fPer           snvoc:knows/snvoc:hasPerson     ?sPer .
+?sPer           snvoc:id                        ?personId;
+                snvoc:firstName                 ?personFirstName;
+                snvoc:lastName                  ?personLastName;
+                snvoc:gender                    ?personGender;
+                snvoc:birthday                  ?bd;
+                snvoc:isLocatedIn/foaf:name     ?personCityName .
+?post           snvoc:hasCreator                ?sPer;
+                snvoc:hasTag                    ?tag .
+FILTER(?gPer != ?sPer) .
+BIND((?hs0 + 1) AS ?hs1) .
+FILTER((MONTH(?bd) = ?hs0 && DAY(?bd) >= 21) || (MONTH(?bd) = ?hs1 && DAY(?bd) <= 22)) .
 }
-order by desc(?score) ?fof
-limit 10
+GROUP BY ?personId ?personFirstName ?personLastName ?personGender ?personCityName
+ORDER BY DESC(?commonInterestScore) ?personId
+LIMIT 10
