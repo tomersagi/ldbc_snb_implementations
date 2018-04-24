@@ -1,30 +1,32 @@
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>
-PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
-PREFIX sntag: <http://www.ldbc.eu/ldbc_socialnet/1.0/tag/>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-PREFIX dbpedia: <http://dbpedia.org/resource/>
-PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
+prefix sntag: <http://www.ldbc.eu/ldbc_socialnet/1.0/tag/>
+prefix sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/>
+prefix foaf: <http://xmlns.com/foaf/0.1/>
+prefix dbpedia: <http://dbpedia.org/resource/>
+prefix dbpedia-owl: <http://dbpedia.org/ontology/>
 
-select
-    (?tagname AS ?tagName)
-    (count(*) AS ?postCount)
-where {
-    ?post a snvoc:Post . ?post snvoc:hasCreator ?fr .
-    ?post snvoc:hasTag ?tag . ?tag foaf:name ?tagname .
-    ?post snvoc:creationDate ?date . sn:pers$Person snvoc:knows ?fr .
-    filter (?date >= $Date0 && ?date <= $Date0 + "P$DurationD"^^xsd:duration) .
-    filter (!exists {
-        sn:pers$Person snvoc:knows ?fr2 .
-        ?post2 snvoc:hasCreator ?fr2 .
-	    ?post2 a snvoc:Post .
-	    ?post2 snvoc:hasTag ?tag .
-        ?post2 snvoc:creationDate ?date2 .
-	    filter (?date2 < $Date0)
-    })
+SELECT ?tagName (count (*) AS ?postCount)
+WHERE {
+?person a                               snvoc:Person;
+        snvoc:id                        ?id;
+        snvoc:knows/snvoc:hasPerson     ?friend;
+        snvoc:knows/snvoc:hasPerson     ?firend2 .
+?post   a                               snvoc:Post;
+        snvoc:hasCreator                ?friend;
+        snvoc:creationDate              ?date;
+        snvoc:hasTag/foaf:name          ?tagName .
+FILTER  (?date >= ?startDate) .
+FILTER  (!EXISTS {
+        ?post2  a                       snvoc:Post;
+                snvoc:hasCreator        ?frined2;
+                snvoc:creationDate      ?date2;
+                snvoc:hasTag            ?tag .
+        FILTER  (?date2 < ?startDate) .
+        }) .
 }
-group by ?tagname
-order by desc(?cnt) ?tagname
-limit 10
+GROUP BY ?tagName
+ORDER BY desc(?postCount) ?tagName
+LIMIT 15
