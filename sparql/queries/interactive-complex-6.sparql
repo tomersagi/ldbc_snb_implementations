@@ -2,32 +2,39 @@ PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT (COUNT(?message) AS ?postCount) ?otherTag
+SELECT (COUNT(?message) AS ?postCount) ?tagName
 WHERE {
   ?message snvoc:hasTag ?otherTag.
+  ?otherTag <http://xmlns.com/foaf/0.1/name> ?tagName.
   {
     SELECT DISTINCT ?message
     WHERE {
       ?message snvoc:hasCreator   ?friend;
                snvoc:hasTag       ?tag;
                rdf:type           snvoc:Post.
+      ?tag <http://xmlns.com/foaf/0.1/name> ?tmp.
       {
         SELECT DISTINCT ?friend
         WHERE {
           {
-            ?person snvoc:knows ?tfr.
+            ?person snvoc:knows ?tfr;
+                    snvoc:id    ?id.
             ?tfr    snvoc:hasPerson ?friend.
           } union {
-            ?person snvoc:knows ?tfr2.
+            ?person snvoc:knows ?tfr2;
+                    snvoc:id    ?id.
             ?tfr2   snvoc:hasPerson ?fr2.
             ?fr2    snvoc:knows ?tfr.
             ?tfr    snvoc:hasPerson ?friend.
             filter (?friend != ?person)
           } .
+          filter(?id = $Person)
         }
       }
+      filter(?tmp = $Tag)
     }
   }
 }
-GROUP BY ?otherTag
-ORDER BY DESC(?postCount) ASC(?otherTag)
+GROUP BY ?tagName
+ORDER BY DESC(?postCount) ASC(?tagName)
+LIMIT 10

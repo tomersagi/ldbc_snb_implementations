@@ -1,6 +1,6 @@
 PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
 
-SELECT ?friend ?first ?last ?xCount ?yCount ((?xCount + ?yCount) as ?count)
+SELECT (?friend as ?personId) (?first as ?personFirstName) (?last as ?personLastName) ?xCount ?yCount ((?xCount + ?yCount) as ?count)
 WHERE {
   ?friend snvoc:firstName    ?first;
           snvoc:lastName     ?last.
@@ -9,23 +9,23 @@ WHERE {
     WHERE {
       ?friend   snvoc:isLocatedIn  ?city.
       ?xMessage snvoc:hasCreator   ?friend;
-                snvoc:isLocatedIn  ?countryX;
+                snvoc:isLocatedIn  $Country1;
                 snvoc:creationDate ?date.
       FILTER (
-        !exists { ?city snvoc:isPartOf ?countryX} &&
-        ?date >= ?startDate && ?date < (?startDate + ?duration) )
+        !exists { ?city snvoc:isPartOf $Country1} &&
+        ?date >= $Date0 && ?date < ($Date0 + $Duration) )
       {
         SELECT DISTINCT ?friend
         WHERE {
           {
-            ?person snvoc:knows ?tfr.
+            $Person snvoc:knows ?tfr.
             ?tfr    snvoc:hasPerson ?friend.
           } union {
-            ?person snvoc:knows ?tfr2.
+            $Person snvoc:knows ?tfr2.
             ?tfr2   snvoc:hasPerson ?fr2.
             ?fr2    snvoc:knows ?tfr.
             ?tfr    snvoc:hasPerson ?friend.
-            filter (?friend != ?person)
+            filter (?friend != $Person)
           } .
         }
       }
@@ -40,23 +40,23 @@ WHERE {
     WHERE {
       ?friend   snvoc:isLocatedIn  ?city.
       ?yMessage snvoc:hasCreator   ?friend;
-                snvoc:isLocatedIn  ?countryY;
+                snvoc:isLocatedIn  $Country2;
                 snvoc:creationDate ?date.
       FILTER (
-        !exists { ?city snvoc:isPartOf ?countryY} &&
-        ?date >= ?startDate && ?date < (?startDate + ?duration) )
+        !exists { ?city snvoc:isPartOf $Country2} &&
+        ?date >= $Date0 && ?date < ($Date0 + $Duration) )
       {
         SELECT DISTINCT ?friend
         WHERE {
           {
-            ?person snvoc:knows ?tfr.
+            $Person snvoc:knows ?tfr.
             ?tfr    snvoc:hasPerson ?friend.
           } union {
-            ?person snvoc:knows ?tfr2.
+            $Person snvoc:knows ?tfr2.
             ?tfr2   snvoc:hasPerson ?fr2.
             ?fr2    snvoc:knows ?tfr.
             ?tfr    snvoc:hasPerson ?friend.
-            filter (?friend != ?person)
+            filter (?friend != $Person)
           } .
         }
       }

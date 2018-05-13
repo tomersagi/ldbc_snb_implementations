@@ -1,27 +1,36 @@
-PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
-
-SELECT DISTINCT ?friend ?first ?last ?message ?content ?cdate
+PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/> 
+SELECT DISTINCT
+  (?friend as ?personId)
+  (?first as ?personFirstName)
+  (?last as ?personLastName)
+  ?commentOrPostId
+  (?content as ?commentOrPostContent)
+  (?cdate as ?commentOrPostCreationDate)
 WHERE {
   ?friend  snvoc:firstName ?first;
            snvoc:lastName  ?last.
   ?message snvoc:hasCreator   ?friend;
-           snvoc:creationDate ?cdate.
+           snvoc:creationDate ?cdate;
+           snvoc:id           ?commentOrPostId.
   {
     SELECT DISTINCT ?friend
     WHERE {
       {
-        ?person snvoc:knows ?tfr.
+        ?person snvoc:id    ?id;
+                snvoc:knows ?tfr.
         ?tfr    snvoc:hasPerson ?friend.
       } union {
-        ?person snvoc:knows ?tfr2.
+        ?person snvoc:id    ?id;
+                snvoc:knows ?tfr2.
         ?tfr2   snvoc:hasPerson ?fr2.
         ?fr2    snvoc:knows ?tfr.
         ?tfr    snvoc:hasPerson ?friend.
         filter (?friend != ?person)
       } .
+      filter(?id = $Person)
     }
   }
-  FILTER (?cdate < ?date )
+  FILTER (?cdate < $Date0 )
   {{?message snvoc:content ?content} union {?message snvoc:imageFile ?content}} .
 }
-ORDER BY DESC(?creationDate) ASC(?message)
+ORDER BY DESC(?commentOrPostCreationDate) ASC(?commentOrPostId)
