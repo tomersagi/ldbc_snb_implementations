@@ -1,27 +1,28 @@
 PREFIX snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT ?person ?first ?last ?tag (sum(?Count) as ?replyCount)
+SELECT ?personId ?personFirstName ?personLastName (count(?comment) as replyCount) ?tagNames
 WHERE{
-  ?post snvoc:hasTag ?tag.
-  ?tag  snvoc:isSubclassOf* ?TagClass.
-  ?person snvoc:firstName ?first;
-          snvoc:lastName  ?last.
-  {
-    SELECT ?post (count(?comment) as ?Count)
-    WHERE {
-      ?comment snvoc:hasCreator ?friend;
-               snvoc:replyOf    ?post.
+
+      ?friend   snvoc:id         ?personId;
+                snvoc:firstName  ?personFirstName;
+                snvoc:lastName   ?personLastName.
+      ?comment  snvoc:hasCreator ?friend;
+                snvoc:replyOf    ?post.
+      ?post     snvoc:hasTag     ?tag.
+      ?tag      foaf:name        ?tagNames;
+                rdf:type         ?tagClass.
+      ?tagClass rdfs:subClassOf*  ?tagParent.
+      ?tagParent rdfs:label       $TagType.
       {
-        SELECT DISTINCT ?friend
+        SELECT ?friend
         WHERE {
-            ?person snvoc:knows ?tfr.
-            ?tfr    snvoc:hasPerson ?friend.
+            ?someone snvoc:knows ?tfr;
+                     snvoc:id    $Person.
+            ?tfr     snvoc:hasPerson ?friend.
         }
       }
-    }
-    GROUP BY ?post
-  }
 }
-GROUP BY ?tag ?person ?first ?last
-ORDER BY DESC(?replyCount) ASC(?person)
-LIMIT 10
+#GROUP BY ?personId ?personFirstName ?personLastName ?tagNames
+ORDER BY DESC(?replyCount) ASC(?personId)
